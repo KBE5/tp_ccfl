@@ -2,10 +2,10 @@ import csv
 from collections import Counter
 import os
 
-PATH_SITES = "tp_ccfl/data/sites.csv"
-PATH_MATERIEL = "tp_ccfl/data/materiel.csv"
-PATH_ASSOCIATIONS = "tp_ccfl/data/associations.csv"
-PATH_RESERVATIONS = "tp_ccfl/data/reservations.csv"
+PATH_SITES = "data/sites.csv"
+PATH_MATERIEL = "data/materiel.csv"
+PATH_ASSOCIATIONS = "data/associations.csv"
+PATH_RESERVATIONS = "data/reservations.csv"
 
 def lire_csv(chemin):
     with open(chemin, encoding="utf-8", newline="") as f:
