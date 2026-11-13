@@ -271,17 +271,23 @@ def charger_reservations(engine, batch_size: int = 500) -> tuple[int, int, list]
     df = pd.read_csv(PATH_RESERVATIONS, dtype={"id_reservation": str})
     lues = len(df)
 
+    # Récupération des clés valides présentes en base
     with engine.connect() as conn:
-        valid_materiel = set(row[0] for row in conn.execute(text("SELECT id_materiel FROM materiel")).fetchall())
-        valid_asso = set(row[0] for row in conn.execute(text("SELECT id_association FROM association")).fetchall())
-        valid_sites = set(row[0] for row in conn.execute(text("SELECT code_site FROM site")).fetchall())
+        valid_materiel = set(int(row[0]) for row in conn.execute(text("SELECT id_materiel FROM materiel")).fetchall())
+        valid_asso = set(int(row[0]) for row in conn.execute(text("SELECT id_association FROM association")).fetchall())
+        valid_sites = set(str(row[0]).strip() for row in conn.execute(text("SELECT code_site FROM site")).fetchall())
 
     records = []
     for _, row in df.iterrows():
         try:
-            id_mat = clean_nan(row.get("id_materiel"))
-            id_asso = clean_nan(row.get("id_association"))
-            code_site = clean_nan(row.get("code_site"))
+            # Conversion propre pour correspondre aux types des sets de validation
+            raw_mat = clean_nan(row.get("id_materiel"))
+            raw_asso = clean_nan(row.get("id_association"))
+            raw_site = clean_nan(row.get("code_site"))
+
+            id_mat = int(raw_mat) if raw_mat is not None else None
+            id_asso = int(raw_asso) if raw_asso is not None else None
+            code_site = str(raw_site).strip() if raw_site is not None else None
 
             if id_mat not in valid_materiel:
                 rejets.append({
@@ -323,6 +329,7 @@ def charger_reservations(engine, batch_size: int = 500) -> tuple[int, int, list]
                 "motif_rejet": f"Erreur de formatage : {e}"
             })
 
+    # Insertion par lots (batch) avec SQLAlchemy 2.0
     with engine.begin() as conn:
         for i in range(0, len(records), batch_size):
             batch = records[i:i + batch_size]
